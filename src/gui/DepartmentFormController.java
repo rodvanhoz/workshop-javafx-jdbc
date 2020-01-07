@@ -3,7 +3,9 @@ package gui;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.Set;
 
 import db.DbException;
 import gui.listeners.DataChangeListener;
@@ -19,6 +21,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import model.entities.Department;
 import model.services.DepartmentService;
+import models.exceptions.ValidationException;
 
 public class DepartmentFormController implements Initializable {
 
@@ -75,6 +78,9 @@ public class DepartmentFormController implements Initializable {
 			notifyDataChangeListeners();
 			Utils.currentStage(event).close();
 		}
+		catch (ValidationException e) {
+			setErrorsMessages(e.getErrors());
+		}
 		catch (DbException e) {
 			Alerts.showAlert("Error saving object", null, e.getMessage(), AlertType.ERROR);
 		}
@@ -97,8 +103,18 @@ public class DepartmentFormController implements Initializable {
 	private Department getFormData() {
 		Department obj = new Department();
 		
+		ValidationException exception = new ValidationException("Erro na validação dos dados");
+		
 		obj.setId(Utils.TryParseToInt(txtId.getText()));
+		
+		if (txtName.getText() == null ||  txtName.getText().trim().equals("")) {
+			exception.addError("Name", "Nome não pode ser vaizio");
+		}
 		obj.setName(txtName.getText());
+		
+		if (exception.getErrors().size() > 0) {
+			throw exception;
+		}
 		
 		return obj;
 	}
@@ -121,6 +137,14 @@ public class DepartmentFormController implements Initializable {
 		
 		txtId.setText(String.valueOf(entity.getId()));
 		txtName.setText(entity.getName());
+	}
+	
+	private void setErrorsMessages(Map<String, String> errors) {
+		Set<String> fields = errors.keySet();
+		
+		if (fields.contains("Name")) {
+			lbNameError.setText(errors.get("Name"));
+		}
 	}
 
 }
